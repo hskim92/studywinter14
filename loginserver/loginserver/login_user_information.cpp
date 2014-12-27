@@ -3,36 +3,7 @@
 #include <stdio.h>
 #include"login_user_information.h"
 
-void inituserid()
-{
-
-	userid* user1= (userid*)malloc(sizeof(userid));
-userid* user2= (userid*)malloc(sizeof(userid));
-userid* user3= (userid*)malloc(sizeof(userid));
-userid* user4= (userid*)malloc(sizeof(userid));
-
-	char user1id[] = "hskim";
-	char user1password[] = "hskim";
-	user1->identity = user1id;
-	user1->password = user1password;
-
-	char user2id[] = "jpark";
-	char user2password[] = "jpark";
-	user2->identity = user2id;
-	user2->password = user2password;
-
-	char user3id[] = "jhsong";
-	char user3password[] = "jhsong";
-	user3->identity = user3id;
-	user3->password = user3password;
-
-	char user4id[] = "jschoi";
-	char user4password[] = "jschoi";
-	user4->identity = user4id;
-	user4->password = user4password;
-}
-
-// case error : print error and exit
+// case identityerror : print error and exit
 void err_quit(char *msg)
 {
 	LPVOID lpMsgBuf;
@@ -67,34 +38,63 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	SOCKADDR_IN clientaddr;
 	int addrlen;
 	char buf[BUFSIZE+1];
+	
+	//userid
+	ACCOUNT* user1 = (ACCOUNT*)malloc(sizeof(ACCOUNT));
+	char user1id[] = "hskim";
+	char user1pw[] = "mobile";
+	user1->id = user1id;
+	user1->pw = user1pw;
+	printf("user1 id: %s, pw: %s \n", user1->id, user1->pw);
 
 	// get client information
 	addrlen = sizeof(clientaddr);
 	getpeername(client_sock, (SOCKADDR *)&clientaddr, &addrlen);
 
-	while(1){
 		// input data
 		retval = recv(client_sock, buf, BUFSIZE, 0);
 		if(retval == SOCKET_ERROR){
 			err_display("recv()");
-			break;
+			closesocket(client_sock);
 		}
 		else if(retval == 0)
-			break;
+			closesocket(client_sock);
 
 		// print users data
 		buf[retval] = '\0';
-		printf("[TCP/%s:%d] %s\n", inet_ntoa(clientaddr.sin_addr),
-			ntohs(clientaddr.sin_port), buf);
+			printf("[TCP/%s:%d] id : %s\n", inet_ntoa(clientaddr.sin_addr),
+				ntohs(clientaddr.sin_port), buf);
 
-		// 데이터 보내기
-		retval = send(client_sock, buf, retval, 0);
-		if(retval == SOCKET_ERROR){
-			err_display("send()");
-			break;
-		}
-	}
+			if(strcmp(buf, user1->id) == 0)
+			{
+				char existusermsg[] = "Enter the user password";
+				retval = send(client_sock, existusermsg, strlen(existusermsg), 0);
+				if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
+				retval = recv(client_sock, buf, BUFSIZE, 0);
+				if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
+				buf[retval] = '\0';
+				printf("[TCP/%s:%d] pw : %s\n", inet_ntoa(clientaddr.sin_addr),
+				ntohs(clientaddr.sin_port), buf);
+				if(strcmp(buf, user1->pw) == 0)
+				{
+					char loginsuccess[] = "login success";
+					retval = send(client_sock, loginsuccess, strlen(loginsuccess), 0);
+					if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
+					while(1)
+					{
+						retval = recv(client_sock, buf, BUFSIZE, 0);
+						if(retval == SOCKET_ERROR){ err_display("recv()");
+							break;}
+						else if(retval == 0) break;
+						buf[retval] = '\0';
+						printf("[TCP/%s:%d] id : %s\n", inet_ntoa(clientaddr.sin_addr),
+						ntohs(clientaddr.sin_port), buf);
 
+						retval = send(client_sock, buf, strlen(buf), 0);
+						if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
+					}
+				}			
+			}
 	// closesocket()
 	closesocket(client_sock);
 	printf("[TCP 서버] 클라이언트 종료: IP 주소=%s, 포트 번호=%d\n",

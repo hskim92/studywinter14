@@ -16,7 +16,7 @@ void err_quit(char *msg)
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPTSTR)&lpMsgBuf, 0, NULL);
-	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCTSTR)msg, MB_ICONERROR);
+	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCWSTR)msg, MB_ICONERROR);
 	LocalFree(lpMsgBuf);
 	exit(1);
 }
@@ -54,6 +54,49 @@ int recvn(SOCKET s, char *buf, int len, int flags)
 	return (len - left);
 }
 
+int CHECKACCOUNT(SOCKET sock)
+{
+	char buf[BUFSIZE+1];
+	int len;
+	int retval;
+
+	//id 확인
+	printf("\n[id] ");
+	if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
+	// '\n' 문자 제거
+	len = strlen(buf);
+	if(buf[len-1] == '\n')	buf[len-1] = '\0';
+	if(strlen(buf) == 0) closesocket(sock);
+	// 데이터 보내기
+	retval = send(sock, buf, strlen(buf), 0);
+	if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
+	// 데이터 받기
+	retval = recv(sock, buf, BUFSIZE, 0);
+	if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
+	else if(retval == 0) { closesocket(sock); WSACleanup(); return 0;}
+	// 받은 데이터 출력
+	buf[retval] = '\0';
+	printf("[server message] %s\n", buf);
+
+	//pw 확인
+	printf("\n[pw] ");
+	if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
+	// '\n' 문자 제거
+	len = strlen(buf);
+	if(buf[len-1] == '\n')	buf[len-1] = '\0';
+	if(strlen(buf) == 0) closesocket(sock);
+	// 데이터 보내기
+	retval = send(sock, buf, strlen(buf), 0);
+	if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
+	// 데이터 받기
+	retval = recv(sock, buf, BUFSIZE, 0);
+	if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
+	else if(retval == 0){ closesocket(sock); WSACleanup(); return 0;}
+	// 받은 데이터 출력
+	buf[retval] = '\0';
+	printf("[server message] %s\n", buf);
+}
+
 int main(int argc, char *argv[])
 {
 	int retval;
@@ -79,11 +122,11 @@ int main(int argc, char *argv[])
 	// 데이터 통신에 사용할 변수
 	char buf[BUFSIZE+1];
 	int len;
-
+	if(!CHECKACCOUNT(sock)) return 0;
 	// 서버와 데이터 통신
 	while(1){
 		// 데이터 입력
-		printf("\n[Enter the user ID] ");
+		printf("\n[보낼 데이터] ");
 		if(fgets(buf, BUFSIZE+1, stdin) == NULL)
 			break;
 
@@ -100,10 +143,9 @@ int main(int argc, char *argv[])
 			err_display("send()");
 			break;
 		}
-		printf("[TCP 클라이언트] %d바이트를 보냈습니다. ID : %s \n", retval, buf);
 
 		// 데이터 받기
-		retval = recvn(sock, buf, retval, 0);
+		retval = recv(sock, buf, BUFSIZE, 0);
 		if(retval == SOCKET_ERROR){
 			err_display("recv()");
 			break;
@@ -113,7 +155,6 @@ int main(int argc, char *argv[])
 
 		// 받은 데이터 출력
 		buf[retval] = '\0';
-		printf("[TCP 클라이언트] %d바이트를 받았습니다.\n", retval);
 		printf("[받은 데이터] %s\n", buf);
 	}
 
@@ -124,3 +165,4 @@ int main(int argc, char *argv[])
 	WSACleanup();
 	return 0;
 }
+

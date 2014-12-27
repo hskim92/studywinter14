@@ -2,8 +2,10 @@
 #include <winsock2.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "login_user_information.h"
+#include"login_user_information.h"
 
+#define SERVERPORT 9000
+#define BUFSIZE    512
 
 int main(int argc, char *argv[])
 {
@@ -50,12 +52,16 @@ int main(int argc, char *argv[])
 		printf("\n[TCP 서버] 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
 			inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
 
-		// 스레드 생성
-		hThread = CreateThread(NULL, 0, ProcessClient,
-			(LPVOID)client_sock, 0, NULL);
-		if(hThread == NULL) { closesocket(client_sock); }
-		else { CloseHandle(hThread); }
+		hThread = CreateThread(NULL, 0, ProcessClient, (LPVOID)client_sock,
+			0, NULL);
+		if(hThread == NULL){closesocket(client_sock);}
+		else { CloseHandle(hThread);}
 	}
+
+	// closesocket()
+	closesocket(client_sock);
+	printf("[TCP 서버] 클라이언트 종료: IP 주소=%s, 포트 번호=%d\n",
+		inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
 
 	// closesocket()
 	closesocket(listen_sock);
