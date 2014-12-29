@@ -6,10 +6,19 @@
 
 #define SERVERPORT 9000
 #define BUFSIZE    512
+extern ACCOUNT* wholeuser[10];
+extern int usernumber;
 
 int main(int argc, char *argv[])
 {
 	int retval;
+	for(usernumber = 0; usernumber < 10 ; usernumber++)
+	{
+		wholeuser[usernumber] = (ACCOUNT*)malloc(sizeof(ACCOUNT));
+		wholeuser[usernumber]->id = (char*)malloc(sizeof(char)*BUFSIZE);
+		wholeuser[usernumber]->pw = (char*)malloc(sizeof(char)*BUFSIZE);
+	}
+	usernumber = 0;
 
 	// 윈속 초기화
 	WSADATA wsa;
@@ -38,20 +47,18 @@ int main(int argc, char *argv[])
 	SOCKADDR_IN clientaddr;
 	int addrlen;
 	HANDLE hThread;
+	USER_HEAD* wholeuser = (USER_HEAD*)malloc(sizeof(USER_HEAD));
 
 	while(1){
 		// accept()
 		addrlen = sizeof(clientaddr);
 		client_sock = accept(listen_sock, (SOCKADDR *)&clientaddr, &addrlen);
-		if(client_sock == INVALID_SOCKET){
-			err_display("accept()");
-			break;
-		}
+		if(client_sock == INVALID_SOCKET){	err_display("accept()");	break; 	}
 
 		// 접속한 클라이언트 정보 출력
 		printf("\n[TCP 서버] 클라이언트 접속: IP 주소=%s, 포트 번호=%d\n",
 			inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
-
+		
 		hThread = CreateThread(NULL, 0, ProcessClient, (LPVOID)client_sock,
 			0, NULL);
 		if(hThread == NULL){closesocket(client_sock);}
