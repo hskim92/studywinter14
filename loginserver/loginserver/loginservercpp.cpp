@@ -15,8 +15,9 @@ int main(int argc, char *argv[])
 	for(usernumber = 0; usernumber < 10 ; usernumber++)
 	{
 		wholeuser[usernumber] = (ACCOUNT*)malloc(sizeof(ACCOUNT));
-		wholeuser[usernumber]->id = (char*)malloc(sizeof(char)*BUFSIZE);
-		wholeuser[usernumber]->pw = (char*)malloc(sizeof(char)*BUFSIZE);
+		wholeuser[usernumber]->id = (char*)calloc(sizeof(char),BUFSIZE);
+		wholeuser[usernumber]->pw = (char*)calloc(sizeof(char),BUFSIZE);
+		wholeuser[usernumber]->count = -1;
 	}
 	usernumber = 0;
 
@@ -47,7 +48,6 @@ int main(int argc, char *argv[])
 	SOCKADDR_IN clientaddr;
 	int addrlen;
 	HANDLE hThread;
-	USER_HEAD* wholeuser = (USER_HEAD*)malloc(sizeof(USER_HEAD));
 
 	while(1){
 		// accept()

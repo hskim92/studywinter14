@@ -151,7 +151,18 @@ int CHECKACCOUNT(SOCKET sock)
 		// 받은 데이터 출력
 		buf[retval] = '\0';
 		printf("[server message] %s\n", buf);
-	}		
+	}	
+	else if(atoi(buf) == 3)
+	{
+		// 데이터 받기
+		retval = recv(sock, buf, BUFSIZE, 0);
+		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
+		else if(retval == 0) { closesocket(sock); WSACleanup(); return 0;}
+		// 받은 데이터 출력
+		buf[retval] = '\0';
+		printf("%s\n", buf);
+		system("pause");
+	}
 }
 
 int main(int argc, char *argv[])

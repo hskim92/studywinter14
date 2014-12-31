@@ -6,16 +6,12 @@
 typedef struct ACCOUNT{
 	char* id;
 	char* pw;
+	int count;
 };
 
 typedef struct USER_NODE{
 	struct ACCOUNT* useraccount;
 	struct useraccountlistnode* next;
-};
-
-typedef struct USER_HEAD{
-	int count;
-	struct USER_NODE* head;
 };
 
 void err_quit(char *msg);

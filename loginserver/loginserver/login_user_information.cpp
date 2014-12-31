@@ -48,7 +48,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 	getpeername(client_sock, (SOCKADDR *)&clientaddr, &addrlen);
 
 	//get users choice
-	char sendmodemessage[] = "choose system mode(1.signup, 2.login)";
+	char sendmodemessage[] = "choose system mode(1.signup, 2.login, 3.chaeck user)";
 	retval = send(client_sock, sendmodemessage, strlen(sendmodemessage), 0);
 	if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock); }
 
@@ -72,7 +72,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		if(retval == SOCKET_ERROR){ err_display("recv()");	closesocket(client_sock); }
 		else if(retval == 0)	closesocket(client_sock);
 		buf[retval] = '\0';
-		wholeuser[usernumber]->id = (char*)malloc(sizeof(char)*retval);
+		//wholeuser[usernumber]->id = (char*)malloc(sizeof(char)*retval);
 		strcpy(wholeuser[usernumber]->id, buf);
 
 		//send message to client
@@ -85,8 +85,9 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 		if(retval == SOCKET_ERROR){ err_display("recv()");	closesocket(client_sock); }
 		else if(retval == 0)	closesocket(client_sock);
 		buf[retval] = '\0';
-		wholeuser[usernumber]->pw=(char*)calloc(sizeof(char), retval);
+		//wholeuser[usernumber]->pw=(char*)calloc(sizeof(char), retval);
 		strcpy(wholeuser[usernumber]->pw, buf);
+		wholeuser[usernumber]->count = 0;
 	}
 	//login mode
 	else if(atoi(buf) == 2)
@@ -128,6 +129,7 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 				if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
 				while(1)
 				{
+					(wholeuser[usernumber]->count)++;
 					retval = recv(client_sock, buf, BUFSIZE, 0);
 					if(retval == SOCKET_ERROR){ err_display("recv()"); break;}
 					else if(retval == 0) break;
@@ -137,8 +139,28 @@ DWORD WINAPI ProcessClient(LPVOID arg)
 					retval = send(client_sock, buf, strlen(buf), 0);
 					if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
 				}
+				wholeuser[usernumber]->count = 0;
 			}			
 		}
+	}
+	//check mode
+	else if(atoi(buf) == 3)
+	{
+		char checkusers[BUFSIZE] = "login users : ";
+		//search
+		while(count<10)
+		{
+			if(wholeuser[usernumber]->count > 0)
+			{
+				strcat(checkusers, wholeuser[usernumber]->id);
+				strcat(checkusers, ", ");
+			}
+			usernumber = (usernumber+1) % 10;
+			count++;
+		}
+		count=0;
+		retval = send(client_sock, checkusers, strlen(checkusers), 0);
+		if(retval == SOCKET_ERROR){	err_display("recv()");	closesocket(client_sock);	}
 	}
 
 	// closesocket()
