@@ -1,171 +1,15 @@
 #pragma comment(lib, "ws2_32")
 #include <winsock2.h>
+#include <WS2tcpip.h>
+#include <Windows.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "resource.h"
+#include "messengerclient.h"
 
-#define SERVERIP   "127.0.0.1"
-#define SERVERPORT 9000
-#define BUFSIZE    512
+extern client c;
 
-// 소켓 함수 오류 출력 후 종료
-void err_quit(char *msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf, 0, NULL);
-	MessageBox(NULL, (LPCTSTR)lpMsgBuf, (LPCWSTR)msg, MB_ICONERROR);
-	LocalFree(lpMsgBuf);
-	exit(1);
-}
-
-// 소켓 함수 오류 출력
-void err_display(char *msg)
-{
-	LPVOID lpMsgBuf;
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf, 0, NULL);
-	printf("[%s] %s", msg, (char *)lpMsgBuf);
-	LocalFree(lpMsgBuf);
-}
-
-// 사용자 정의 데이터 수신 함수
-int recvn(SOCKET s, char *buf, int len, int flags)
-{
-	int received;
-	char *ptr = buf;
-	int left = len;
-
-	while(left > 0){
-		received = recv(s, ptr, left, flags);
-		if(received == SOCKET_ERROR)
-			return SOCKET_ERROR;
-		else if(received == 0)
-			break;
-		left -= received;
-		ptr += received;
-	}
-
-	return (len - left);
-}
-
-int CHECKACCOUNT(SOCKET sock)
-{
-	char buf[BUFSIZE+1];
-	int len;
-	int retval;
-
-	//select mode
-	retval = recv(sock, buf, BUFSIZE, 0);
-	if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-	else if(retval == 0){ closesocket(sock); WSACleanup(); return 0;}
-	buf[retval] = '\0';
-	printf("[server message] %s\n", buf);
-	//mode 확인
-	printf("\n[mode] ");
-	if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
-	// '\n' 문자 제거
-	len = strlen(buf);
-	if(buf[len-1] == '\n')	buf[len-1] = '\0';
-	if(strlen(buf) == 0) closesocket(sock);
-	retval = send(sock, buf, len, 0);
-	if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
-
-	if(atoi(buf) == 1)
-	{
-		//receive server message
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-		else if(retval == 0){ closesocket(sock); WSACleanup(); return 0;}
-		buf[retval] = '\0';
-		printf("[server message] %s\n", buf);
-
-		//send id
-		printf("\n[id] ");
-		if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
-		// '\n' 문자 제거
-		len = strlen(buf);
-		if(buf[len-1] == '\n')	buf[len-1] = '\0';
-		if(strlen(buf) == 0) closesocket(sock);
-		// 데이터 보내기
-		retval = send(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
-
-		//receive server message
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-		else if(retval == 0){ closesocket(sock); WSACleanup(); return 0;}
-		buf[retval] = '\0';
-		printf("[server message] %s\n", buf);
-
-		//send pw
-		printf("\n[pw] ");
-		if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
-		// '\n' 문자 제거
-		len = strlen(buf);
-		if(buf[len-1] == '\n')	buf[len-1] = '\0';
-		if(strlen(buf) == 0) closesocket(sock);
-		// 데이터 보내기
-		retval = send(sock, buf, strlen(buf), 0);
-		if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
-	}
-	else if(atoi(buf) == 2)
-	{
-		//id 확인
-		printf("\n[id] ");
-		if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
-		// '\n' 문자 제거
-		len = strlen(buf);
-		if(buf[len-1] == '\n')	buf[len-1] = '\0';
-		if(strlen(buf) == 0) closesocket(sock);
-		// 데이터 보내기
-		retval = send(sock, buf, strlen(buf), 0);
-		if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
-		// 데이터 받기
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-		else if(retval == 0) { closesocket(sock); WSACleanup(); return 0;}
-		// 받은 데이터 출력
-		buf[retval] = '\0';
-		printf("[server message] %s\n", buf);
-
-		//pw 확인
-		printf("\n[pw] ");
-		if(fgets(buf, BUFSIZE+1, stdin) == NULL)closesocket(sock);
-		// '\n' 문자 제거
-		len = strlen(buf);
-		if(buf[len-1] == '\n')	buf[len-1] = '\0';
-		if(strlen(buf) == 0) closesocket(sock);
-		// 데이터 보내기
-		retval = send(sock, buf, strlen(buf), 0);
-		if(retval == SOCKET_ERROR){	err_display("send()");closesocket(sock);}
-		// 데이터 받기
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-		else if(retval == 0){ closesocket(sock); WSACleanup(); return 0;}
-		// 받은 데이터 출력
-		buf[retval] = '\0';
-		printf("[server message] %s\n", buf);
-	}	
-	else if(atoi(buf) == 3)
-	{
-		// 데이터 받기
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){	err_display("recv()"); closesocket(sock); }
-		else if(retval == 0) { closesocket(sock); WSACleanup(); return 0;}
-		// 받은 데이터 출력
-		buf[retval] = '\0';
-		printf("%s\n", buf);
-		system("pause");
-	}
-}
-
-int main(int argc, char *argv[])
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	int retval;
 
@@ -174,60 +18,20 @@ int main(int argc, char *argv[])
 	if(WSAStartup(MAKEWORD(2,2), &wsa) != 0)
 		return 1;
 
-	// socket()
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
-	if(sock == INVALID_SOCKET) err_quit("socket()");
+	//변수 초기화
+	c.g_chatmsg.type = CHATTING;
 
-	// connect()
-	SOCKADDR_IN serveraddr;
-	ZeroMemory(&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = inet_addr(SERVERIP);
-	serveraddr.sin_port = htons(SERVERPORT);
-	retval = connect(sock, (SOCKADDR *)&serveraddr, sizeof(serveraddr));
-	if(retval == SOCKET_ERROR) err_quit("connect()");
+	//이벤트 생성
+	c.g_hReadEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	if(c.g_hReadEvent == NULL) return 1;
+	c.g_hReadEvent = CreateEvent(NULL, FALSE, TRUE, NULL);
+	if(c.g_hReadEvent == NULL) return 1;
 
-	// 데이터 통신에 사용할 변수
-	char buf[BUFSIZE+1];
-	int len;
-	if(!CHECKACCOUNT(sock)) return 0;
+	//대화상자 생성
+	c.g_hInst = hInstance;
+	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, c.DlgProc);
 
-	// 서버와 데이터 통신
-	while(1){
-		// 데이터 입력
-		printf("\n[보낼 데이터] ");
-		if(fgets(buf, BUFSIZE+1, stdin) == NULL)
-			break;
-
-		// '\n' 문자 제거
-		len = strlen(buf);
-		if(buf[len-1] == '\n')
-			buf[len-1] = '\0';
-		if(strlen(buf) == 0)
-			break;
-
-		// 데이터 보내기
-		retval = send(sock, buf, strlen(buf), 0);
-		if(retval == SOCKET_ERROR){
-			err_display("send()");
-			break;
-		}
-
-		// 데이터 받기
-		retval = recv(sock, buf, BUFSIZE, 0);
-		if(retval == SOCKET_ERROR){
-			err_display("recv()");
-			break;
-		}
-		else if(retval == 0)
-			break;
-
-		// 받은 데이터 출력
-		buf[retval] = '\0';
-		printf("[받은 데이터] %s\n", buf);
-	}
-	// closesocket()
-	closesocket(sock);
+	c.~client();
 
 	// 윈속 종료
 	WSACleanup();

@@ -77,6 +77,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="loginclient.cpp" />
+    <ClCompile Include="messengerclient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="messengerclient.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
