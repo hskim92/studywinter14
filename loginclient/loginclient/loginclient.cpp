@@ -29,7 +29,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//대화상자 생성
 	c.g_hInst = hInstance;
-	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, c.DlgProc);
+	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), NULL, DlgProc);
 
 	c.~client();
 
